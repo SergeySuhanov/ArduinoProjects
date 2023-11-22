@@ -17,37 +17,42 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 unsigned long myTimer;
 byte frameDuration = 20;
+int frameTime = 0;
 double angle = 0;
-double radian = 0;
 int smallDot = 3;
 int mediumDot = 5;
 int bigDot = 8;
 
 class MyTriangle {
   public:
-    double x0;
+    double x0;  // centre origin point
     double y0;
-    double x1;
+    double x1;  // vertices
     double y1;
     double x2;
     double y2;
-    double rightAngleRadian = 1.5707963;
+    double x3;
+    double y3;
+    double radianOf120 = 120 * 3.14 / 180;  // vertices spread
 
     MyTriangle(double originX, double originY) {
       x0 = originX;
       y0 = originY;
-      x1 = x0 + 8 * sin(0);
-      y1 = y0 + 8 * cos(0);
-      x2 = x0 + 6 * sin(rightAngleRadian);
-      y2 = y0 + 6 * cos(rightAngleRadian);
+      x1 = x0 + 20 * sin(0);
+      y1 = y0 + 20 * cos(0);
+      x2 = x0 + 20 * sin(radianOf120);
+      y2 = y0 + 20 * cos(radianOf120);
+      x3 = x0 + 20 * sin(-radianOf120);
+      y3 = y0 + 20 * cos(-radianOf120);
     }
 
     void rotate(double angle) {
-      x1 = x0 + 24 * sin(angle);
-      y1 = y0 + 24 * cos(angle);
-      double newRadian = angle + rightAngleRadian;
-      x2 = x0 + 18 * sin(newRadian);
-      y2 = y0 + 18 * cos(newRadian);
+      x1 = x0 + 20 * sin(0 + angle);
+      y1 = y0 + 20 * cos(0 + angle);
+      x2 = x0 + 20 * sin(radianOf120 + angle);
+      y2 = y0 + 20 * cos(radianOf120 + angle);
+      x3 = x0 + 20 * sin(-radianOf120 + angle);
+      y3 = y0 + 20 * cos(-radianOf120 + angle);
     }
 
     void moveOriginPoint(double speed, double angle) {
@@ -56,12 +61,6 @@ class MyTriangle {
 
       x0 += moveX;
       y0 += moveY;
-
-      x1 += moveX;
-      y1 += moveY;
-
-      x2 += moveX;
-      y2 += moveY;
     }
 };
 
@@ -79,6 +78,8 @@ void setup() {
   // the library initializes this with an Adafruit splash screen.
   // Clear the buffer
   display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
   myTimer = millis();
 }
 
@@ -86,17 +87,22 @@ void setup() {
 void loop() {
   if (millis() >= (myTimer + frameDuration)) {
     display.clearDisplay();
-    myTimer += frameDuration;
-    if (angle >=360) angle == 0;
-    radian = angle * 3,14 / 180;
-    shape.rotate(radian);
+    
+    if (angle >=2) angle == 0;
+    shape.rotate(angle);
     //shape.moveOriginPoint(1, radian);
     angle += 0.03;
 
-    display.drawTriangle(shape.x0, shape.y0, shape.x1, shape.y1, shape.x2, shape.y2, SSD1306_WHITE);
-    display.drawCircle(shape.x0, shape.y0, smallDot, SSD1306_WHITE);
-    display.drawCircle(shape.x1, shape.y1, mediumDot, SSD1306_WHITE);
-    display.drawCircle(shape.x2, shape.y2, bigDot, SSD1306_WHITE);
+    display.drawTriangle(shape.x1, shape.y1, shape.x2, shape.y2, shape.x3, shape.y3, SSD1306_WHITE);
+    display.drawCircle(shape.x1, shape.y1, smallDot, SSD1306_WHITE);
+    display.drawCircle(shape.x2, shape.y2, mediumDot, SSD1306_WHITE);
+    display.drawCircle(shape.x3, shape.y3, bigDot, SSD1306_WHITE);
+
+    frameTime = millis() - myTimer;
+    display.setCursor(0, 0);
+    display.println(frameTime);
+    myTimer += frameDuration;
+
     display.display();
   }
 }
